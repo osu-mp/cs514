@@ -11,71 +11,93 @@ import time
 import unittest
 
 # keep a cache of already calculated primes to speed up subsequent runs
+# because our loop starts at
 known_primes = [2, 3]
-max_loop = 3
 
 def is_prime(num):
-    global known_primes, max_loop
-
+    """
+    Return True iff input number is prime, else False
+    :param num:
+    :return:
+    """
+    global known_primes
+    # error checking
     if num <= 1:
         return False
+    # check if we've seen it/marked it as a prime before, constant lookup
     if num in known_primes:
         return True
 
     # a number is prime if no other numbers can be multiplied to make the number
-    # base case: if we've seen it/marked it as a prime before
-    # time complexity: O(1), constant time; single modulo operation
+    # time complexity: modulo operation of each known prime
+    # assuming empty cache, this has no performance impact O(1)
     for prime in known_primes:
         if (num % prime) == 0:
             return False
 
     # if no numbers can divide without a remainder (modulo 0 result), the number is prime
     # we already checked evens, so only need to check all odd numbers
-    # we can start at 3 or previous high loop value and increment counter by 2 to skip all evens, only going to half of num
-    # time complexity: O(n)
-    #       worst case scenario, the for loop iterates for every other number from 3 to half of num
-    #       roughly n/2 iterations, so it is O(n)
-    stop_val = math.ceil(math.sqrt(num))
-    for i in range(max_loop, stop_val, 2):
+    # we can start at 3 and increment counter by 2 to skip all evens, square root
+    # worst case scenario, the for loop iterates for every other number from 3 to sqrt of num
+    # time complexity:       so O(sqrt(n)/2) -> O(sqrt(n))
+    stop_val = math.ceil(math.sqrt(num)) + 1
+    for i in range(5, stop_val, 2):
         if (num % i) == 0:
-            max_loop = i
             return False
 
     # if here, no divisor has been found, the number is prime
     known_primes.append(num)       # cache for later
     return True
 
-    # time complexity (for all of is_prime): O(n)
+    # final time complexity (for all of is_prime): O(sqrt(n)/2)
+
 
 def factors(num):
-    global max_loop, known_primes
+    """
+    Return the prime factors for the given number
+    If the number is prime, return empty list
+    If the number is not prime, return the smallest prime numbers that
+        multiply to get the number
+        e.g.
+            factors(5) = [] # 5 is prime
+            factors(12) = [2, 2, 3] # not prime
+    :param num:
+    :return:
+    """
+    # cache for faster subsequent runs
+    global known_primes
     if num <= 1:
         return []
 
+    # complexity: O(sqrt(n)/2)
     if is_prime(num):
         return []
 
     # start counting primes from the smallest, add them to list
     primes = []
+
     # first remove the known primes
+    # if the cache is not used, this will have no impact on performance
+    # if the cache contains all primes that make up the input, the algo
+    # will effectively terminate here; O(n) where n is the size of the cache
     for prime in known_primes:
         while (num % prime) == 0:
             primes.append(prime)
             num = num // prime
 
     # next find the smallest factor and restart with num divided by smallest factor, checking only odd numbers
-    stop_val = math.ceil(math.sqrt(num))
-    for i in range(max_loop, stop_val, 2):  # complexity: O(n); worst case it iterates n/2 times
-        max_loop = i
-        if (num % i) == 0:  # complexity: O(1); single modulo operation
+    # since we are counting up, we only need to check up to the square root of the number
+    # because sqrt(n) * sqrt(n) + 1 >= n (no new factors will be discovered past here)
+    # complexity: O(sqrt(n)/2)
+    stop_val = math.ceil(math.sqrt(num)) + 1
+    for i in range(5, stop_val, 2):
+        if (num % i) == 0:
             if is_prime(i):
                 primes.append(i)
             new_num = num // i  # complexity: O(1); single divide operation
-            # complexity (below): O(n^2)
-            #   worst case this iterates n times (above for loop), and executes O(n) is_prime via factors func
-            #   O(n * n) -> O(n^2)
+
             sub_factors = factors(new_num)
-            # if no subfactors are found, the new_num is a prime
+            # if no sub factors are found, the new_num is a prime
             if not sub_factors:
                 sub_factors = [new_num]
             return primes + sub_factors
@@ -83,6 +105,38 @@ def factors(num):
     # return the prime factors collected
     return primes
 
+
+def factors_slow(input_num):
+    """
+    Single algo but without caching it is much slower
+    :param input_num:
+    :return:
+    """
+    num = input_num
+    if num <= 3:
+        return []
+
+    primes = []
+    # remove all evens from the number,
+    while (num % 2) == 0:
+        num = num // 2
+        primes.append(2)
+
+    # complexity: O(sqrt(n)/2)
+    stop_val = math.ceil(math.sqrt(num)) + 1
+    for i in range(3, stop_val, 2):
+        while (num % i) == 0:
+            sub_factors = factors_slow(i)
+            if sub_factors:
+                primes += sub_factors
+            else:
+                primes.append(i)
+            num = num // i
+
+    if num > 1 and input_num != num:
+        primes.append(num)
+
+    return primes
 
 class Testing(unittest.TestCase):
     def test_invalid_inputs(self):
@@ -115,6 +169,8 @@ class Testing(unittest.TestCase):
         # subsequent runs should run in 0(1) time because of cache
         self.assertEqual(factors(1266008519), [])
         self.assertEqual(factors(1266008519), [])
+        self.assertEqual(factors(8889689999934465613), [43, 42083, 4912600735277])
+        self.assertEqual(factors(80497520654571648085), [5, 21221, 2769593, 273924389])
 
 
 def time_single_run(num):
@@ -125,18 +181,18 @@ def time_single_run(num):
     runtime = time.time() - start
     return runtime
 
+
 def data_collection():
 
     # i is the number of digits in our input number (the random nums for that loop will be between 10^i-1 and 10^i)
     # the range is huge, but there's a user input check to break out of the loop when desired
-    i = 8
-    MAX_I = 22
+    i = 10
+    MAX_I = 20
     num_runs = 100
     base = pow(10, i - 1)
 
     # for plotting
     x, y = [], []
-    # while True:
     while i <= MAX_I:
         # for each 'i' digit number, produce j random numbers and factor them
         sum = 0
@@ -144,7 +200,7 @@ def data_collection():
             rand = random.randint(base, base * 10)
             runtime = time_single_run(rand)
             sum += runtime
-            print('%d :: %f sec' % (rand, runtime))
+            print('%d :: %f sec' % (rand, runtime), end='\r')
             # log to file (opening handle each loop in case runtime is really long, won't lose all data)
             with open('runtimes_large_n.csv', 'a') as out_fh:
                 out_fh.write('%d,%f\n' % (rand, runtime))
@@ -159,25 +215,23 @@ def data_collection():
         base = base * 10
         i += 1
 
-        # response = input('Increase one more digit? (y or n)')
-        # if response.lower() != 'y':
-        #     print('Quitting')
-        #     exit(1)
-
-    plt.scatter(x, y, marker="o")
-    # calculate equation for quadratic trendline
+    plt.scatter(x, y, marker="o", label="Avg. Runtime")
+    # calculate equation for quadratic trend line
     z = np.polyfit(x, y, 2)
     p = np.poly1d(z)
-    # add trendline to plot
-    plt.plot(x, p(x), marker="x", c="red")
+    # add trend line to plot
+    plt.plot(x, p(x), marker="x", c="red", label="Runtime Trendline")
 
-    print("y=%.6fx^2+%.6fx+(%.6f)" % (z[0], z[1], z[2]))
+    print("Trend equation: y=%.6fx^2+%.6fx+(%.6f)" % (z[0], z[1], z[2]))
 
+    plt.title("Factors Runtime Experiments")
     plt.xlabel("Number of input digits")
     plt.ylabel(f"Average runtime of {num_runs} trials (sec)")
-    plt.title("Factors Runtime Experiments")
+    plt.legend(loc="upper left")
+    plt.ylim(-1.5, 2.0)
     plt.savefig("runtimes.png")
     plt.show()
+
 
 if __name__ == '__main__':
     # unittest.main()
