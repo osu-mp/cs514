@@ -90,8 +90,10 @@ def factors(num):
     # because sqrt(n) * sqrt(n) + 1 >= n (no new factors will be discovered past here)
     # complexity: O(sqrt(n)/2)
     stop_val = math.ceil(math.sqrt(num)) + 1
+    # O(sqrt(n)/2)
     for i in range(5, stop_val, 2):
         if (num % i) == 0:
+            # O(sqrt(n)/2)
             if is_prime(i):
                 primes.append(i)
             new_num = num // i  # complexity: O(1); single divide operation
@@ -186,13 +188,14 @@ def data_collection():
 
     # i is the number of digits in our input number (the random nums for that loop will be between 10^i-1 and 10^i)
     # the range is huge, but there's a user input check to break out of the loop when desired
-    i = 10
-    MAX_I = 20
-    num_runs = 100
+    i = 15
+    MAX_I = 22
+    num_runs = 5
     base = pow(10, i - 1)
 
     # for plotting
     x, y = [], []
+    # x, y = [17, 18, 19, 20], [0.357950, 1.226209, 54.058740, 84.985157]
     while i <= MAX_I:
         # for each 'i' digit number, produce j random numbers and factor them
         sum = 0
@@ -217,18 +220,23 @@ def data_collection():
 
     plt.scatter(x, y, marker="o", label="Avg. Runtime")
     # calculate equation for quadratic trend line
-    z = np.polyfit(x, y, 2)
+    z = np.polyfit(x, y, 1)
     p = np.poly1d(z)
+    z4 = np.polyfit(x, y, 5)
+    p4 = np.poly1d(z4)
     # add trend line to plot
-    plt.plot(x, p(x), marker="x", c="red", label="Runtime Trendline")
+    plt.plot(x, p(x), marker="x", c="red", label="Linear Runtime Trendline")
+    plt.plot(x, p4(x), marker="x", c="green", label="$n^4$ Runtime Trendline")
 
-    print("Trend equation: y=%.6fx^2+%.6fx+(%.6f)" % (z[0], z[1], z[2]))
+    plt.xticks(x)
+
+    print("Linear Trend equation: y=%.6fx+(%.6f)" % (z[0], z[1]))
+    print("n^4 Trend equation: y=%.6fx^4 + %.6fx^3 + %.6fx^2 + %.6fx+(%.6f)" % (z4[0], z4[1], z4[2], z4[3], z4[4]))
 
     plt.title("Factors Runtime Experiments")
     plt.xlabel("Number of input digits")
     plt.ylabel(f"Average runtime of {num_runs} trials (sec)")
     plt.legend(loc="upper left")
-    plt.ylim(-1.5, 2.0)
     plt.savefig("runtimes.png")
     plt.show()
 
