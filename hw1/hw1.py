@@ -190,12 +190,12 @@ def data_collection():
     # the range is huge, but there's a user input check to break out of the loop when desired
     i = 15
     MAX_I = 22
-    num_runs = 5
+    num_runs = 20
     base = pow(10, i - 1)
 
     # for plotting
     x, y = [], []
-    # x, y = [17, 18, 19, 20], [0.357950, 1.226209, 54.058740, 84.985157]
+
     while i <= MAX_I:
         # for each 'i' digit number, produce j random numbers and factor them
         sum = 0
@@ -218,7 +218,6 @@ def data_collection():
         base = base * 10
         i += 1
 
-    plt.scatter(x, y, marker="o", label="Avg. Runtime")
     # calculate equation for quadratic trend line
     z = np.polyfit(x, y, 1)
     p = np.poly1d(z)
@@ -226,9 +225,11 @@ def data_collection():
     p4 = np.poly1d(z4)
     # add trend line to plot
     plt.plot(x, p(x), marker="x", c="red", label="Linear Runtime Trendline")
-    plt.plot(x, p4(x), marker="x", c="green", label="$n^4$ Runtime Trendline")
+    plt.plot(x, p4(x), marker="x", c="green", label="$n^4$ Runtime Trendline", alpha=0.5)
 
     plt.xticks(x)
+    plt.scatter(x, y, marker="o", label="Avg. Runtime", s=100)
+
 
     print("Linear Trend equation: y=%.6fx+(%.6f)" % (z[0], z[1]))
     print("n^4 Trend equation: y=%.6fx^4 + %.6fx^3 + %.6fx^2 + %.6fx+(%.6f)" % (z4[0], z4[1], z4[2], z4[3], z4[4]))
@@ -237,7 +238,7 @@ def data_collection():
     plt.xlabel("Number of input digits")
     plt.ylabel(f"Average runtime of {num_runs} trials (sec)")
     plt.legend(loc="upper left")
-    plt.savefig("runtimes.png")
+    plt.savefig("runtimes2.png")
     plt.show()
 
 
