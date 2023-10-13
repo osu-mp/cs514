@@ -10,12 +10,22 @@ import random
 import time
 import unittest
 
+
 def merge_sort(nums):
+    """
+    Merge sort:
+    -divide input list into two equal parts
+    -sort each individual list
+    -combine both lists by iterating over each and add the smaller value to the final list
+    """
+
     if len(nums) > 1:
-        mid = len(nums) // 2
-        left = merge_sort(nums[:mid])
+        mid = len(nums) // 2                # split list at the midpoint
+        left = merge_sort(nums[:mid])       # sort each individually
         right = merge_sort(nums[mid:])
 
+        # with left and right sorted, iterate over both lists
+        # and add the smaller item to the final list
         left_i, right_i, num_i = 0, 0, 0
         while left_i < len(left) and right_i < len(right):
             if left[left_i] < right[right_i]:
@@ -26,7 +36,8 @@ def merge_sort(nums):
                 right_i += 1
             num_i += 1
 
-
+        # at this point one ore more of the lists is empty, so we need to empty
+        # any remaining values from the lists (will either be right, left, or neither with values)
         while left_i < len(left):
             nums[num_i] = left[left_i]
             left_i += 1
@@ -36,178 +47,187 @@ def merge_sort(nums):
             right_i += 1
             num_i += 1
 
+    # else: base case when 0 or 1 items are in the list (sorted)
 
     return nums
 
 
-def quick_sort_delete(nums):
-    # pick a pivot element in the list
-    # divide list into 2 sublists:
-    #   left: elements < pivot
-    #   right: elements >= pivot
-    # recursively sort the 2 sublists
-    # concatenate sublists with pivot in the middle
 
-    if nums == []:
-        return []
+def quick_sort(nums, random_pivot=False):
+    """
+    quick sort:
+    -pick a pivot point in the list (using either midpoint or random index, default midpoint)
+    -put all items less than pivot in left list
+    -put all items greater than pivot in right list
+    -put all items matching pivot in mid list
+    -recursively quicksort the right and left lists until there are 0 or 1 items in the list
+    -combine the left, mid, and right lists (all sorted by this point)
+    """
+
+    # base case: 0 or 1 items in a list is sorted
+    if len(nums) <= 1:
+        return nums
     else:
-        #pivot_num = 0
-        pivot_num = random.choice(range(len(nums)))
+        # select either a random pivot point or the midpoint of the list
+        # using first or last index leads to too many recursive calls
+        if random_pivot:
+            pivot_num = random.choice(range(len(nums)))
+        else:
+            pivot_num = len(nums) // 2
+        # get the value of the list at that pivot num
         pivot = nums[pivot_num]
-        left = [x for x in nums[pivot_num] if x < pivot]
-        right = [x for x in nums[pivot_num + 1:] if x >= pivot]
+        # divide the larger list into three parts: less than, equal to, greater than
+        left, mid, right = [], [], []
+        for num in nums:
+            if num < pivot:
+                left.append(num)
+            elif num > pivot:
+                right.append(num)
+            else:
+                mid.append(num)
 
-        return quick_sort_all(left) + [pivot] + quick_sort_all(right)
-
-
-def quick_sort_all(nums):
-    return quick_sort(nums, 0, len(nums) - 1)
-
-
-def quick_sort(nums, left, right):
-    if left < right:
-        pivot_i = partition(nums, left, right)
-        quick_sort(nums, left, pivot_i - 1)
-        quick_sort(nums, pivot_i + 1, right)
-    return nums
+        # recursively sort the left/right lists and combine with pivot matches/mid
+        return quick_sort(left) + mid + quick_sort(right)
 
 
-def partition(nums, left, right):
-    # TODO: try random num
-    pivot = nums[right]
-    pivot = nums[left]
-    pivot = nums[left + (right - left) // 2]
-    # pivot = nums[random.randint(left, right - 1)]
-    print(f"{left=}, {right=}, {pivot=}")
-    i = left - 1
+def quick_sort_random(nums):
+    """
+    Run same quick sort algo but pick a random pivot instead of midpoint
+    """
+    return quick_sort(nums, random_pivot=True)
 
-    for j in range(left, right):
-        if nums[j] <= pivot:
-            i = i + 1
-            nums[i], nums[j] = nums[j], nums[i]
 
-    nums[i + 1], nums[right] = nums[right], nums[i + 1]
-
-    return i + 1
 class Testing(unittest.TestCase):
     def test_small(self):
         # sort ordered list
         nums = list(range(0, 10))
         exp = sorted(nums)
         self.assertEqual(merge_sort(nums), exp)
-        self.assertEqual(quick_sort_all(nums), exp)
+        self.assertEqual(quick_sort(nums), exp)
+        self.assertEqual(quick_sort(nums, random_pivot=True), exp)
 
         # sort reverse ordered list
         nums = list(range(10, 0))
         exp = sorted(nums)
         self.assertEqual(merge_sort(nums), exp)
-        self.assertEqual(quick_sort_all(nums), exp)
+        self.assertEqual(quick_sort(nums), exp)
 
         # sort randomly ordered list
-        nums = list(range(10, 0))
+        nums = list(range(10, 0, -1))
         random.shuffle(nums)
         exp = sorted(nums)
         self.assertEqual(merge_sort(nums), exp)
-        self.assertEqual(quick_sort_all(nums), exp)
+        self.assertEqual(quick_sort(nums), exp)
+
+        # sort randomly ordered list with duplicates
+        nums = list(range(10, 0, -1)) + list(range(10, 0, -1))
+        random.shuffle(nums)
+        exp = sorted(nums)
+        self.assertEqual(merge_sort(nums), exp)
+        self.assertEqual(quick_sort(nums), exp)
+
+    def test_large(self):
+        nums = list(range(0, 100000))
+        exp = sorted(nums)
+        self.assertEqual(merge_sort(nums), exp)
+        self.assertEqual(quick_sort(nums), exp)
+        self.assertEqual(quick_sort(nums, random_pivot=True), exp)
+
+        random.shuffle(nums)
+        self.assertEqual(merge_sort(nums), exp)
+        self.assertEqual(quick_sort(nums), exp)
+        self.assertEqual(quick_sort(nums, random_pivot=True), exp)
 
 
 def time_single_run(nums, algo):
     """ Return the time in seconds to run <algo>sort on a list of nums"""
     start = time.time()
-    print(f"Sorting ({nums}", end="\r")
+    # print(f"Sorted {len(nums)} items with {algo}")
     sort = algo(nums)
     runtime = time.time() - start
 
-    # error checking
-    print(f"{algo=}")
-    print(f"{nums=}")
-    print(f"{sort=}")
-    assert(sort == sorted(nums))
+    # error check to ensure that the list was acutally sorted (compare with built-in sort)
+    # assert(sort == sorted(nums))
     return runtime
+
 
 def data_collection():
 
-    nums = list(range(0, 200))
-    num_runs = 20
+    y_merge_sorted = []
+    y_quick_mid_sorted = []
+    y_quick_rand_sorted = []
+    y_merge_shuffled = []
+    y_quick_mid_shuffled = []
+    y_quick_rand_shuffled = []
+    x = []
+    # x_ticks = []
 
-    merge_sum_sorted = 0
-    quick_sum_sorted = 0
-    merge_sum_shuffled = 0
-    quick_sum_shuffled = 0
+    # for i in range(3, 8):
+    for max_num in [pow(10, 5), 3 * pow(10, 5), 6 * pow(10, 5),
+                    pow(10, 6), 3 * pow(10, 6), 6 * pow(10, 6),
+                    pow(10, 7)]:
+        print(f"Results for list of size {max_num}")
+        # max_num = pow(10, i)
+        nums = list(range(0, max_num))
+        num_runs = 10
+        x.append(max_num)
+        # x_ticks.append(max_num)
 
-    for _ in range(num_runs):
-        quick_sum_sorted += time_single_run(nums, quick_sort_all)
-        merge_sum_sorted += time_single_run(nums, merge_sort)
+        merge_sum_sorted = 0
+        quick_mid_sum_sorted = 0
+        quick_rand_sum_sorted = 0
+        merge_sum_shuffled = 0
+        quick_mid_sum_shuffled = 0
+        quick_rand_sum_shuffled = 0
 
-    for _ in range(num_runs):
-        random.shuffle(nums)
-        quick_sum_shuffled += time_single_run(nums, quick_sort_all)
-        merge_sum_shuffled += time_single_run(nums, merge_sort)
+        for _ in range(num_runs):
+            merge_sum_sorted += time_single_run(nums, merge_sort)
+            quick_mid_sum_sorted += time_single_run(nums, quick_sort)
+            # quick_rand_sum_sorted += time_single_run(nums, quick_sort_random)
 
-    print("sorted")
-    print(f"merge {merge_sum_sorted / num_runs}")
-    print(f"quick {quick_sum_sorted / num_runs}")
+        for _ in range(num_runs):
+            random.shuffle(nums)
+            merge_sum_shuffled += time_single_run(nums, merge_sort)
+            quick_mid_sum_shuffled += time_single_run(nums, quick_sort)
+            # quick_rand_sum_shuffled += time_single_run(nums, quick_sort_random)
 
-    print("shuffled")
-    print(f"merge {merge_sum_shuffled / num_runs}")
-    print(f"quick {quick_sum_shuffled / num_runs}")
+        y_merge_sorted.append(merge_sum_sorted / num_runs)
+        y_quick_mid_sorted.append(quick_mid_sum_sorted / num_runs)
+        # y_quick_rand_sorted.append(quick_rand_sum_sorted / num_runs)
+        y_merge_shuffled.append(merge_sum_shuffled / num_runs)
+        y_quick_mid_shuffled.append(quick_mid_sum_shuffled / num_runs)
+        # y_quick_rand_shuffled.append(quick_rand_sum_shuffled / num_runs)
 
-def data_collection_old():
+        print("sorted")
+        print(f"merge {merge_sum_sorted / num_runs}")
+        print(f"quick (mid) {quick_mid_sum_sorted / num_runs}")
+        # print(f"quick (rand) {quick_rand_sum_sorted / num_runs}")
 
-    i = 1
-    MAX_I = 3
-    num_runs = 20
-    base = pow(10, i - 1)
-
-    # for plotting
-    x, y = [], []
-
-    while i <= MAX_I:
-        # for each 'i' digit number, produce j random numbers and factor them
-        sum = 0
-        for j in range(0, num_runs):
-            rand = random.randint(base, base * 10)
-            runtime = time_single_run(rand)
-            sum += runtime
-            print('%d :: %f sec' % (rand, runtime), end='\r')
-            # log to file (opening handle each loop in case runtime is really long, won't lose all data)
-            with open('runtimes_large_n.csv', 'a') as out_fh:
-                out_fh.write('%d,%f\n' % (rand, runtime))
-
-        average = sum / num_runs
-        print('Average (%d): %f' % (i, average))
-        x.append(i)
-        y.append(average)
-        with open('runtime_averages.csv', 'a') as out_fh:
-            out_fh.write('%i,%f\n' % (i, average))
-        # increment the base random number by a digit
-        base = base * 10
-        i += 1
-
-    # calculate equation for quadratic trend line
-    z = np.polyfit(x, y, 1)
-    p = np.poly1d(z)
-    z4 = np.polyfit(x, y, 5)
-    p4 = np.poly1d(z4)
-    # add trend line to plot
-    plt.plot(x, p(x), marker="x", c="red", label="Linear Runtime Trendline")
-    plt.plot(x, p4(x), marker="x", c="green", label="$n^4$ Runtime Trendline", alpha=0.5)
-
-    plt.xticks(x)
-    plt.scatter(x, y, marker="o", label="Avg. Runtime", s=100)
+        print("shuffled")
+        print(f"merge {merge_sum_shuffled / num_runs}")
+        print(f"quick (mid) {quick_mid_sum_shuffled / num_runs}")
+        # print(f"quick (rand) {quick_rand_sum_shuffled / num_runs}")
 
 
-    print("Linear Trend equation: y=%.6fx+(%.6f)" % (z[0], z[1]))
-    print("n^4 Trend equation: y=%.6fx^4 + %.6fx^3 + %.6fx^2 + %.6fx+(%.6f)" % (z4[0], z4[1], z4[2], z4[3], z4[4]))
+    plt.plot(x, y_merge_sorted, c='r', marker='o', label="Merge Sort (sorted input)")
+    plt.plot(x, y_merge_shuffled, c='g', marker="o", label="Merge Sort (shuffled input)")
 
-    plt.title("Factors Runtime Experiments")
+    plt.plot(x, y_quick_mid_sorted, c='b', marker='o', label="Quick Sort (sorted input)")
+    plt.plot(x, y_quick_mid_shuffled, c='black', marker="o", label="Quick Sort (shuffle input)")
+
+    # plt.plot(x, y_quick_rand_sorted, c='g', label="Quick Sort (random pivot)")
+
+    plt.title("Sorting Comparison with Sorted and Unsorted Inputs")
     plt.xlabel("Number of input digits")
     plt.ylabel(f"Average runtime of {num_runs} trials (sec)")
+
+    # plt.plot(x, y_quick_rand_shuffled, c='g', label="Quick Sort (random pivot)")
+    # plt.xticks(x_ticks)
+
     plt.legend(loc="upper left")
-    plt.savefig("runtimes2.png")
+    plt.savefig("combined.png")
     plt.show()
 
-
 if __name__ == '__main__':
-    unittest.main()
-    # data_collection()
+    # unittest.main()
+    data_collection()
