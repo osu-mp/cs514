@@ -5,6 +5,9 @@ CS 514 - HW4 - Graphs
 from queue import SimpleQueue
 import unittest
 
+# set to True to print board in one line (probably easier for grading)
+# False to print a 3x3 of the board (easier debugging)
+SIMPLE_PRINT = True
 
 def ShortestPath(goal, init_states):
     """
@@ -33,6 +36,7 @@ def ShortestPath(goal, init_states):
         # create a queue of nodes to visit, start with goal (root)
         queue = SimpleQueue()
         queue.put(goal)
+        solved = False
 
         # iterate over all nodes in the graph (added in BFS manner to queue)
         while not queue.empty():
@@ -48,8 +52,9 @@ def ShortestPath(goal, init_states):
             # number of moves to transition from goal to start
             if vertex_str == init_key:
                 shortest_path_lens.append(parent_depth)
-                label = f"Init State (min. moves={parent_depth})"
+                label = f"\tInit State (min. moves={parent_depth})"
                 print(f"{visualize(init_state, label)}")
+                solved = True
                 break
 
             # else add all valid, unvisited children of this node to the queue
@@ -65,6 +70,9 @@ def ShortestPath(goal, init_states):
                     visited[key] = child_depth
                     queue.put(child)
 
+        if not solved:
+            shortest_path_lens.append(None)
+            print(f"{visualize(init_state, '    Init state (unsolvable)')}")
     return shortest_path_lens
 
 def stringify(nums):
@@ -135,6 +143,11 @@ def get_permutations(nums):
 
 
 def visualize(nums, title="Current:"):
+    if SIMPLE_PRINT:
+        str = f"{title} {nums}"
+        # print(str)
+        return str
+
     grid_size = 3
 
     # Debug routine to show the current board config
@@ -182,9 +195,23 @@ class Testing(unittest.TestCase):
         exp = [2]
         self.assertEqual(exp, ShortestPath(goal, init_states))
 
+
         goal = [1, 2, 3, 0, 4, 6, 7, 5, 8]
-        init_states = [[1, 2, 3, 4, 5, 6, 7, 8, 0]]
-        exp = [3]
+        init_states = [
+            [1, 2, 3, 4, 5, 6, 7, 8, 0],
+            [1, 2, 3, 4, 5, 0, 7, 8, 6],
+            [1, 2, 3, 4, 0, 5, 7, 8, 6],
+        ]
+        exp = [3, 4, 5]
+        self.assertEqual(exp, ShortestPath(goal, init_states))
+
+        goal = [1, 2, 3, 8, 0, 4, 7, 6, 5]
+        init_states = [
+            [3, 6, 4, 0, 1, 2, 8, 7, 5],
+            [6, 0, 4, 3, 1, 2, 8, 7, 5],
+            [6, 6, 0, 3, 1, 2, 8, 7, 5], # unsolvable, expect None
+        ]
+        exp = [11, 13, None]
         self.assertEqual(exp, ShortestPath(goal, init_states))
 
     def test_demo(self):
