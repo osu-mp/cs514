@@ -5,19 +5,71 @@ CS 514 - HW4 - Graphs
 from queue import SimpleQueue
 import unittest
 
-GRID_SIZE = 3
 
+def ShortestPath(goal, init_states):
+    """
+    Use BFS to solve the 8-puzzle (3x3 grid with empty slot)
+
+    :param goal: Array of desired board config, e.g. [1, 2, 3, 4, 5, 6, 7, 8, 0]
+    :param init_states: Array of initial states (target the goal state)
+        There is only 1 goal but can be multiple initial states
+    :return: List of minimum number of moves to move from each init state to the goal
+    """
+    # minimum number of moves to solve each input init state (depth in BFS tree)
+    shortest_path_lens = []
+
+    print(f"{visualize(goal, 'Goal')}")
+
+    # iterate over each initial state, finding a path to the single goal
+    for init_state in init_states:
+        init_key = stringify(init_state)
+
+        visualize(goal, "Goal")
+        visualize(init_state, "Init")
+
+        # key = str representation of board, value = min depth in BFS tree
+        visited = {}
+
+        # create a queue of nodes to visit, start with goal (root)
+        queue = SimpleQueue()
+        queue.put(goal)
+
+        # iterate over all nodes in the graph (added in BFS manner to queue)
+        while not queue.empty():
+            # pop off the first node
+            vertex = queue.get()
+            vertex_str = stringify(vertex)
+            if vertex_str not in visited:
+                parent_depth = 0
+            else:
+                parent_depth = visited[vertex_str]
+
+            # if this node matches our init state, its depth represents the minimum
+            # number of moves to transition from goal to start
+            if vertex_str == init_key:
+                shortest_path_lens.append(parent_depth)
+                label = f"Init State (min. moves={parent_depth})"
+                print(f"{visualize(init_state, label)}")
+                break
+
+            # else add all valid, unvisited children of this node to the queue
+            child_depth = parent_depth + 1
+            visualize(vertex, "Vertex")
+            children = get_permutations(vertex)
+            for child in children:
+                visualize(child, "Child")
+                key = stringify(child)
+
+                # add any unvisited children to the queue
+                if key not in visited:
+                    visited[key] = child_depth
+                    queue.put(child)
+
+    return shortest_path_lens
 
 def stringify(nums):
     # convert a list of numbers into a string to use as a hash key
     return ' '.join(map(str, nums))
-
-
-def listify(mystr):
-    # convert a string back into a list
-    my_list = mystr.split()
-    my_list = [int(num) for num in my_list]
-    return my_list
 
 
 def create_copy_with_swap(nums, start, end):
@@ -83,13 +135,16 @@ def get_permutations(nums):
 
 
 def visualize(nums, title="Current:"):
+    grid_size = 3
+
     # Debug routine to show the current board config
     str = f"{title}\n"
     for i in range(len(nums)):
         str += f"{nums[i]} "
-        if (i + 1) % GRID_SIZE == 0:
+        if (i + 1) % grid_size == 0:
             str += "\n"
     # print(str)
+    return str
 
 
 def permutation_visualizer():
@@ -102,65 +157,6 @@ def permutation_visualizer():
     visualize(nums, "center")
     for perm in get_permutations(nums):
         visualize(perm, "center_perm")
-
-def ShortestPath(goal, init_states):
-    """
-    Use BFS to solve the 8-puzzle (3x3 grid with empty slot)
-    The input is a goal state and th
-    :param goal: Array of desired board config, e.g. [1, 2, 3, 4, 5, 6, 7, 8, 0]
-    :param init_states: Array of initial states (target the goal state)
-        There is only 1 goal but can be multiple initial states
-    :return: List of minimum number of moves to move from each init state to the goal
-    """
-    # minimum number of moves to solve each input init state (depth in BFS tree)
-    shortest_path_lens = []
-
-    goal_key = stringify(goal)
-
-    # iterate over each initial state, finding a path to the single goal
-    for init_state in init_states:
-        init_key = stringify(init_state)
-
-        visualize(goal, "Goal")
-        visualize(init_state, "Init")
-
-        # key = str representation of board, value = min depth in BFS tree
-        visited = {}
-
-        # create a queue of nodes to visit, start with goal (root)
-        queue = SimpleQueue()
-        queue.put(goal)
-
-        # iterate over all nodes in the graph (added in BFS manner to queue)
-        while not queue.empty():
-            # pop off the first node
-            vertex = queue.get()
-            vertex_str = stringify(vertex)
-            if vertex_str not in visited:
-                parent_depth = 0
-            else:
-                parent_depth = visited[vertex_str]
-
-            # if this node matches our init state, its depth represents the minimum
-            # number of moves to transition from goal to start
-            if vertex_str == init_key:
-                shortest_path_lens.append(parent_depth)
-                break
-
-            # else add all valid, unvisited children of this node to the queue
-            child_depth = parent_depth + 1
-            visualize(vertex, "Vertex")
-            children = get_permutations(vertex)
-            for child in children:
-                visualize(child, "Child")
-                key = stringify(child)
-
-                # add any unvisited children to the queue
-                if key not in visited:
-                    visited[key] = child_depth
-                    queue.put(child)
-
-    return shortest_path_lens
 
 
 class Testing(unittest.TestCase):
