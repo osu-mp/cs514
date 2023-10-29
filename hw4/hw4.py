@@ -21,10 +21,18 @@ def ShortestPath(goal, init_states):
     # minimum number of moves to solve each input init state (depth in BFS tree)
     shortest_path_lens = []
 
+    if not valid_config(goal):
+        for i in range(len(init_states)):
+            shortest_path_lens.append(None)
+        return shortest_path_lens
+
     print(f"{visualize(goal, 'Goal')}")
 
     # iterate over each initial state, finding a path to the single goal
     for init_state in init_states:
+        if not valid_config(init_state):
+            shortest_path_lens.append(None)
+            continue
         init_key = stringify(init_state)
 
         visualize(goal, "Goal")
@@ -61,6 +69,7 @@ def ShortestPath(goal, init_states):
             child_depth = parent_depth + 1
             visualize(vertex, "Vertex")
             children = get_permutations(vertex)
+
             for child in children:
                 visualize(child, "Child")
                 key = stringify(child)
@@ -79,6 +88,17 @@ def stringify(nums):
     # convert a list of numbers into a string to use as a hash key
     return ' '.join(map(str, nums))
 
+def valid_config(nums):
+    if len(nums) != 9:
+        print("Invalid input, should be numbers 0 through 8")
+        return False
+    for i in range(9):
+        if i not in nums:
+            print(f"Invalid input, missing number {i}")
+            return False
+
+
+    return True
 
 def create_copy_with_swap(nums, start, end):
     """
@@ -94,6 +114,18 @@ def create_copy_with_swap(nums, start, end):
     return new_nums
 
 
+def get_permutations_simple(nums):
+    pos = nums.index(0)
+    perms = []
+    for index in [
+        pos - 1, pos + 1,   # left, right
+        pos - 3, pos + 3    # up, down
+    ]:
+        if index >= 0 and index <= 8:
+            perms.append(create_copy_with_swap(nums, pos, index))
+
+    return perms
+
 def get_permutations(nums):
     """
     Brute force way to find all child permutations for a given parent board config
@@ -103,6 +135,12 @@ def get_permutations(nums):
     """
     pos = nums.index(0)
     perms = []
+    # for index in [
+    #     pos - 1, pos + 1,   # left, right
+    #     pos - 3, pos + 3    # up, down
+    # ]:
+    #     if index >= 0 and index <= 8:
+    #         perms.append(create_copy_with_swap(nums, pos, index))
     if pos == 0:  # top left
         perms.append(create_copy_with_swap(nums, pos, 1))  # right
         perms.append(create_copy_with_swap(nums, pos, 3))  # down
@@ -214,10 +252,37 @@ class Testing(unittest.TestCase):
         exp = [11, 13, None]
         self.assertEqual(exp, ShortestPath(goal, init_states))
 
+    def test_invalid_inputs(self):
+        goal = [1, ]
+        init_states = [
+            [3, 6, 4, 0, 1, 2, 8, 7, 5],
+            [3, 6, 4, 0, 1, 2, 8, 7, 5],
+        ]
+        exp = [None, None]
+        self.assertEqual(exp, ShortestPath(goal, init_states))
+
+        [3, 6, 4, 0, 1, 2, 8, 7, 5],
+        init_states = [
+            [3, 6, 4, 0, 1, 2, 8, 7, 0],
+            [3, 6, 4, 0, 1, 2, 8, 7, 9],
+        ]
+        exp = [None, None]
+        self.assertEqual(exp, ShortestPath(goal, init_states))
+
     def test_demo(self):
         goal = [1, 2, 3, 8, 0, 4, 7, 6, 5]
-        init_states = [[1, 2, 3, 4, 5, 6, 8, 7, 0]]
-        exp = [8]
+        init_states = [
+            [1, 2, 3, 4, 5, 6, 8, 7, 0],
+            [2, 8, 1, 4, 6, 3, 0, 7, 5]
+        ]
+        exp = [8, 12]
+        self.assertEqual(exp, ShortestPath(goal, init_states))
+
+        goal = [4, 1, 2, 0, 8, 7, 6, 3, 5]
+        init_states = [
+            [1, 2, 3, 4, 5, 6, 7, 8, 0]
+        ]
+        exp = [17]
         self.assertEqual(exp, ShortestPath(goal, init_states))
 
 
