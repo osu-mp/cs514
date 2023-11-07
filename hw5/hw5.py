@@ -5,6 +5,7 @@ CS 514 - HW4 - Greedy Algorithms
 import ast
 from collections import defaultdict
 import heapq
+import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -15,7 +16,6 @@ import unittest
 DEBUG = False        # turn on to enable debug prints, False for quiet mode
 NUM_RUNS = 20         # increase for more data collection runs
 
-import itertools
 
 def MST_Kruskal(graph):
     """
@@ -130,7 +130,7 @@ class MinQueue:
         self.pq = []  # list of entries arranged in a heap
         self.entry_finder = {}  # mapping of tasks to entries
         self.counter = itertools.count()  # unique sequence count
-        self.values = {}    # quick lookup of priority
+        self.values = {}    # quick lookup of priority (allows us to quickly see what vertex is still left)
 
     def add_task(self, task, priority=0):
         """Add a new task or update the priority of an existing task"""
@@ -251,7 +251,7 @@ def data_collection():
                 y_kruskal[test_num] = time_single_run(graph, MST_Kruskal) / NUM_RUNS
 
     plt.plot(x, y_prim, c='r', marker='o', label="Prim's Algorithm")
-    plt.plot(x, y_kruskal, c='g', marker="o", label="Kruskal")
+    plt.plot(x, y_kruskal, c='g', marker="o", label="Kruskal's Algorithm")
 
     plt.title("Greedy Algorithms for Minimum Spanning Tree")
     plt.xlabel("Number of Edges")
@@ -265,13 +265,6 @@ def data_collection():
     for i in range(len(x)):
         print(f"{i+1}, {nodes[i]}, {x[i]}, {y_prim[i]:1.5f}, {y_kruskal[i]:1.5f}")
 
-    print("Pri")
-    for i in range(len(x)):
-        print(f"{y_prim[i]:1.5f}")
-
-    print("Kru")
-    for i in range(len(x)):
-        print(f"{y_kruskal[i]:1.5f}")
 
 if __name__ == '__main__':
     data_collection()
