@@ -9,11 +9,22 @@ import random
 import time
 import unittest
 
-DEBUG = True        # turn on to enable debug prints, False for quiet mode
+DEBUG = False        # turn on to enable debug prints, False for quiet mode
 NUM_RUNS = 10         # increase for more data collection runs
 
 
 def editDistance(str1, str2):
+    """
+    The basic edit distance algorithm is based on dynamic programming and has the complexity of O(mn).
+    There are 3 possible operations, insert (I),  replace (R), and delete (D), each of which
+    costs 1 unit (unless the characters exactly match).
+    For example, if x= [babble] and y='apple', the edit distance is 3 (delete b, replace b/p):
+        babble
+         apple
+    :param str1:
+    :param str2:
+    :return:
+    """
     m = len(str1)
     n = len(str2)
 
@@ -57,7 +68,12 @@ class Testing(unittest.TestCase):
         act = editDistance("A", "B")
         self.assertEqual(1, act)
 
+        act = editDistance("ABCDEFGH", "AACRFHI")
+        self.assertEqual(5, act)
+
     def test_given(self):
+        act = editDistance("babble", "apple")
+        self.assertEqual(3, act)
         act = editDistance("ATCAT", "ATTATC")
         self.assertEqual(2, act)
         act = editDistance(
@@ -108,7 +124,6 @@ def data_collection():
 
 
     plt.plot(x, y, c='r', marker='o')
-
     plt.title("Runtime of editDistance with Random Strings")
     plt.xlabel("Number of Characters in Input Strings")
     plt.ylabel("Runtime (sec.)")
@@ -126,7 +141,7 @@ def longest_common_substring(str1, str2):
     n = len(str2)
 
     # initialize a table to store the longest
-    lcs_matrix = np.zeros((m + 1, n +1), dtype=int)
+    lcs_matrix = np.zeros((m + 1, n + 1), dtype=int)
 
     max_len = 0
     max_pos = None
@@ -152,29 +167,29 @@ def longest_common_substring(str1, str2):
 
 
 def coffee_shops_greedy(shops, k):
-    # assuming each potential store has a positive profit
-    max_profit, max_name = -1, None
     selected_shops = set()
     available_shops = set(shops.keys())
-    first = True
+    total_profit = 0
+
     while available_shops:
-        shop_name = available_shops.pop()
+        # assuming each potential store has a positive profit
+        max_profit, max_name = -1, None
 
-        if shops[shop_name]["profit"] > max_profit:
-            for adj_name in available_shops:
-                if abs(shops[shop_name]['dist'] - shops[adj_name]['dist']) > k:
-                    max_profit = shops[shop_name]['profit']
-                    max_name = shop_name
+        for shop_name in available_shops:
+            if shops[shop_name]["profit"] > max_profit:
+                max_name = shop_name
+                max_profit = shops[shop_name]["profit"]
 
-        if max_name or (first and max_name):
+        if max_name:
             selected_shops.add(max_name)
-            max_name = None
-            first = False
+            available_shops.remove(max_name)
+            total_profit += max_profit
 
-    profit = 0
-    for shop in selected_shops:
-        profit += shops[shop]['profit']
-    return profit
+            for adj_name in list(available_shops):
+                if abs(shops[max_name]['dist'] - shops[adj_name]['dist']) < k:
+                    available_shops.remove(adj_name)
+
+    return total_profit
 
 
 def coffee_shops_dynamic(shops, k):
@@ -217,7 +232,9 @@ def coffee_shops_test():
     }
     k = 6
     print(f"Greedy {coffee_shops_greedy(shops, k)}")
+    assert(coffee_shops_greedy(shops, k) == 11)
     print(f"Dynamic {coffee_shops_dynamic(shops, k)}")
+    assert(coffee_shops_dynamic(shops, k) == 20)
 
 
 if __name__ == '__main__':
